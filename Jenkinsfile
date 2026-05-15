@@ -6,30 +6,30 @@ pipeline {
         jdk 'JDK-21'
     }
 
-    environment {
-        APP_NAME = 'jenkins-java-demo'
-        DEPLOY_DIR = '/opt/jenkins-demo'
-    }
-
     stages {
-
         stage('Checkout Code') {
             steps {
-                echo 'Pulling latest code from GitHub...'
-                checkout scm
+                echo 'Code checkout completed from GitHub'
             }
         }
 
-        stage('Run Tests') {
+        stage('Check Java and Maven') {
             steps {
-                echo 'Running unit tests...'
+                sh 'java -version'
+                sh 'mvn -version'
+                sh 'echo JAVA_HOME=$JAVA_HOME'
+                sh 'echo MAVEN_HOME=$MAVEN_HOME'
+            }
+        }
+
+        stage('Test') {
+            steps {
                 sh 'mvn test'
             }
         }
 
-        stage('Build Application') {
+        stage('Build') {
             steps {
-                echo 'Building application jar...'
                 sh 'mvn clean package'
             }
         }
@@ -41,42 +41,25 @@ pipeline {
             }
         }
 
-        stage('Deploy Application') {
-            steps {
-                echo 'Deploying application...'
-
-                sh '''
-                    mkdir -p ${DEPLOY_DIR}
-                    cp target/${APP_NAME}-1.0.0.jar ${DEPLOY_DIR}/app.jar
-                    echo "Application deployed to ${DEPLOY_DIR}"
-                    ls -lh ${DEPLOY_DIR}
-                '''
-            }
-        }
-
         stage('Run Application') {
             steps {
-                echo 'Running application for verification...'
-
-                sh '''
-                    cd ${DEPLOY_DIR}
-                    java -jar app.jar
-                '''
+                echo 'Running Java application...'
+                sh 'java -cp target/jenkins-java-demo-1.0.0.jar com.demo.App'
             }
         }
     }
 
     post {
+        always {
+            echo 'Pipeline execution finished.'
+        }
+
         success {
-            echo 'Pipeline completed successfully!'
+            echo 'Pipeline completed successfully.'
         }
 
         failure {
             echo 'Pipeline failed. Please check the Jenkins console logs.'
-        }
-
-        always {
-            echo 'Pipeline execution finished.'
         }
     }
 }
